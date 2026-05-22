@@ -33,7 +33,7 @@ class ArmComponent:
         #          stored in the class
         self.name = name
         self.color = color
-
+        self.shape_to_use = shape_to_use
         # Points - one of the nice things about using a class is you can do some "fancy" initialization. In
         #  this case we're going to duplicate the last point in pts and make sure we have a 3xn+1 matrix
         if shape_to_use == "square":
@@ -61,7 +61,7 @@ class ArmComponent:
         #    Why isn't there a length/width input? We'll set those later in the make_shape_* methods
         # GUIDES Step 2: Make sure you change get_shape_matrix and get_pose_matrix to return the matrices you create
         # YOUR CODE HERE
-
+        
 
     # Using the staticmethod decorator like this means that this method does not
     #  have/need a self pointer (notice no self)
@@ -83,12 +83,16 @@ class ArmComponent:
         #  Add a return statement at the end
         #  If you're confused, look at points_in_a_wedge, above
         # YOUR CODE HERE
-
+        pts_square = np.ones((3,4))
+        pts_square[0] = [-1, 1, 1, -1] #x
+        pts_square[1] = [-1, -1, 1, 1] #y
+        return pts_square
     def get_shape_matrix(self):
         """ Return the shape matrix"""
         # YOUR CODE HERE
-        # GUIDES STEP 2: Change this to return your shape matrix
-        return ...
+        
+        #  GUIDES STEP 2: Change this to return your shape matrix
+        return 
     
     def get_pose_matrix(self):
         """ Return the pose matrix"""
