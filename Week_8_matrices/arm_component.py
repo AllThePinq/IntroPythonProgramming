@@ -34,6 +34,10 @@ class ArmComponent:
         self.name = name
         self.color = color
         self.shape_to_use = shape_to_use
+        self.shape_matrix = np.identity(3)
+        self.pose_matrix = np.identity(3)
+        self.angle = 0.0
+        self.band_name = "Led Zeppelin" #my favorite???
         # Points - one of the nice things about using a class is you can do some "fancy" initialization. In
         #  this case we're going to duplicate the last point in pts and make sure we have a 3xn+1 matrix
         if shape_to_use == "square":
@@ -50,7 +54,7 @@ class ArmComponent:
         self.pts[0:2, 0:n_points] = pts[0:2, 0:n_points]
         # Duplicate the last point
         self.pts[0:2, n_points] = pts[0:2, 0]
-
+        
         # GUIDES Step 2: create variables for the other things you might want to keep in an arm component
         #  You will need (at least)
         #     A 3x3 matrix for shaping the square/wedge (this is mat_shape_square_* from the lecture activity)
@@ -59,7 +63,7 @@ class ArmComponent:
         #  You will might also want to save length and width and current angle
         #  For each variable, define a default value (eg, self.angle = 0.0). For any matrix, set it to be the identity
         #    Why isn't there a length/width input? We'll set those later in the make_shape_* methods
-        # GUIDES Step 2: Make sure you change get_shape_matrix and get_pose_matrix to return the matrices you create
+        # GUIDES Step 2: Make sure you change get_shape_matrix and get_pose_matrix to return the matrices you create OK :)
         # YOUR CODE HERE
         
 
@@ -90,17 +94,14 @@ class ArmComponent:
     def get_shape_matrix(self):
         """ Return the shape matrix"""
         # YOUR CODE HERE
-        
-        #  GUIDES STEP 2: Change this to return your shape matrix
-        return 
-    
+        return self.shape_matrix
     def get_pose_matrix(self):
         """ Return the pose matrix"""
         # YOUR CODE HERE
         # GUIDES STEP 2: Change this to return your pose matrix
-        return ...
+        return self.pose_matrix
 
-    def set_to_base_shape(self, base_width=1.0, base_height=0.5):
+    def set_to_base_shape(self, base_width, base_height):
         """ Position and orient the base of the arm (the wedge-shape at the bottom)
         Base middle should be at 0,0, wedge pointed up, base_width wide, base_height tall
         @param base_width - width of the base
@@ -111,9 +112,14 @@ class ArmComponent:
         #   translations - do NOT just make a numpy array
         # Don't forget you can save the base_width and base_height values here by doing, eg, self.blah = base_width
         # YOUR CODE HERE
-        ... # Replace with actual code
+        self.base_width = base_width
+        self.base_height = base_height
+        self.shape_matrix = mt.make_translation_matrix(0.0, self.base_height/2) @ mt.make_scale_matrix(self.base_width/2, self.base_height/2) @ np.identity(3)
 
-    def set_to_link_shape(self, link_length, link_width):
+        return self.shape_matrix
+        
+        
+    def set_to_link_shape(self, link_length=0.5, link_width=0.25):
         """ This is one of the arm components - since they're all kinda the same (just different sizes) just have
         one function to create them
         The link should have the middle of the left hand side at 0,0 and extend along the x_axis by link_length
@@ -125,7 +131,9 @@ class ArmComponent:
         #   translations - do NOT just make a numpy array
         # Don't forget you can save the link length here by doing, eg, self.blah = link_length
         # YOUR CODE HERE
-        ... # Replace with actual code
+        self.link_length = link_length
+        self.link_width = link_width
+        self.shape_matrix = mt.make_translation_matrix(self.link_length/2, 0.0) @ mt.make_scale_matrix(self.link_length/2, self.link_width/2) @ np.identity(3)
 
     def set_to_palm_shape(self, palm_width):
         """ This is palm of the gripper - a rectangle palm_width tall, centered at the origin, 1/10 as wide as it is tall
@@ -136,7 +144,9 @@ class ArmComponent:
         # You must use the mt.make_scale_matrix etc from matrix_routines.py to build the matrix from scales, rotations and
         #   translations - do NOT just make a numpy array
         # YOUR CODE HERE
-        ... # Replace with actual code
+        self.palm_width = palm_width
+        self.shape_matrix = mt.make_scale_matrix(self.palm_width/20, self.palm_width/2) @ np.identity(3)
+        return self.shape_matrix
 
     def set_to_finger_shape(self, palm_width, finger_length, finger_width, b_is_top):
         """ This is one of the fingers. Each finger is a wedge, separated by the palm width
@@ -151,7 +161,23 @@ class ArmComponent:
         # You must use the mt.make_scale_matrix etc from matrix_routines.py to build the matrix from scales, rotations and
         #   translations - do NOT just make a numpy array
         # YOUR CODE HERE
-        ... # Replace with actual code
+        self.palm_width = palm_width
+        self.finger_length = finger_length
+        self.finger_width = finger_width
+        self.b_is_top = b_is_top
+        #pinch
+        pinch = palm_width/2
+        
+        if not b_is_top:
+            pinch = -pinch
+            
+        self.shape_matrix = (
+            mt.make_translation_matrix(finger_length/2,pinch)
+            @ mt.make_rotation_matrix(-np.pi/2)
+            @ mt.make_scale_matrix(finger_width/2, finger_length/2)
+        )
+        return self.shape_matrix
+        
 
     def set_pose_matrix(self, pose_matrix):
         """Set the pose matrix to the given one
@@ -159,7 +185,7 @@ class ArmComponent:
         """
         # GUIDES Step 4: set your pose matrix here
         # YOUR CODE HERE
-        ... # Replace with actual code
+        self.pose_matrix = pose_matrix
 
     def set_pose_rotation(self, rot_amt=0.0):
         """ Set the pose matrix for the component
@@ -173,19 +199,35 @@ class ArmComponent:
         #   There are lots of ways to do this - don't forget you can add more variables in __init__.
         #   You'll probably want to add something to set_to_finger_shape...
         #  Again, use the mt.make_xx_matrix routines, don't just make an array
-        pose_matrix = np.identity(3)   # fix this
-        # YOUR CODE HERE
-        # Call the set_pose_matrix method to actually save the matrix
-        self.set_pose_matrix(pose_matrix=pose_matrix)
+        # YOUR CODE HERE 
+        
+        #make the rotation matrix
+        pose_matrix = mt.make_rotation_matrix(rot_amt)
+        #check if finger
+        if hasattr(self, "b_is_top"):
+            if self.b_is_top:
+                y_base = self.palm_width/2
+            else:
+                y_base = -self.palm_width/2
+            
+            pose_matrix = (
+                mt.make_translation_matrix(0, y_base)
+                @ mt.make_rotation_matrix(rot_amt)
+                @ mt.make_translation_matrix(0, -y_base)
+            )
+            
+        else: #not a finger
+            pose_matrix = mt.make_rotation_matrix(rot_amt)
+        self.pose_matrix = pose_matrix
 
     def plot(self, axs, b_do_pose_matrix=False):
-        """Plot the object in the world by applying the matrix returned by get_shape_matrix() then 
+        """Plot the object in the world by applying t he matrix returned by get_shape_matrix() then 
            the matrix returned by get_shape_matrix() (if in_b_do_pose_matrix is True)
         @param axs - the axes of the figure to plot in
         @param b_do_pose_matrix - if True, do get_shape_matrix() @ get_shape_matrix(), otherwise, just do get_shape_matrix()"""
 
         # Plot with only the shape matrix
-        plot_matrix = self.get_shape_matrix()
+        plot_matrix = self.get_shape_matrix() 
 
         # Plot with the shape matrix and the pose matrix
         if b_do_pose_matrix == True:
