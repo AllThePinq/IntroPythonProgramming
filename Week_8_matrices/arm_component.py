@@ -116,7 +116,7 @@ class ArmComponent:
         self.base_height = base_height
         self.shape_matrix = mt.make_translation_matrix(0.0, self.base_height/2) @ mt.make_scale_matrix(self.base_width/2, self.base_height/2) @ np.identity(3)
 
-        return self.shape_matrix
+        
         
         
     def set_to_link_shape(self, link_length=0.5, link_width=0.25):
@@ -134,6 +134,7 @@ class ArmComponent:
         self.link_length = link_length
         self.link_width = link_width
         self.shape_matrix = mt.make_translation_matrix(self.link_length/2, 0.0) @ mt.make_scale_matrix(self.link_length/2, self.link_width/2) @ np.identity(3)
+        
 
     def set_to_palm_shape(self, palm_width):
         """ This is palm of the gripper - a rectangle palm_width tall, centered at the origin, 1/10 as wide as it is tall
@@ -176,7 +177,6 @@ class ArmComponent:
             @ mt.make_rotation_matrix(-np.pi/2)
             @ mt.make_scale_matrix(finger_width/2, finger_length/2)
         )
-        return self.shape_matrix
         
 
     def set_pose_matrix(self, pose_matrix):
